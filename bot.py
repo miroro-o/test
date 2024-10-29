@@ -4,8 +4,6 @@ from telebot import types # pip install pyTelegramBotAPI
 bot = telebot.TeleBot(config.token)
 @bot.message_handler(commands=['go', 'start'])  # Обработка команды для старта
 def welcome(message):
-    sti = open(path + 'stiker.tgs', 'rb')
-    bot.send_sticker(message.chat.id, sti)
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
     item3 = types.KeyboardButton("Приложения")
@@ -14,12 +12,9 @@ def welcome(message):
 
     markup.add(item1, item2, item3)
 
+
     bot.send_message(message.chat.id,
-                     "Добро пожаловать, {0.first_name}!\\n\\nЯ - <b>{1.first_name}</b>, бот команды Projector в НГТУ, "
-                     "создан для того, "
-                     "чтобы помочь Вам влиться в нашу команду,"
-                     "просто узнать что-то о нас или же просто пообщаться и весело провести время.\\n\\n"
-                     "<i>Have a nice time</i>".format(
+                     "Добро пожаловать, {0.first_name}!  Я - <b>{1.first_name}</b>, бот созданный для того, чтобы вы смогли найти еду".format(
                          message.from_user, bot.get_me()),
                      parse_mode='html', reply_markup=markup)
 # RUN
