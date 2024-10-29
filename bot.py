@@ -14,7 +14,7 @@ def welcome(message):
 
 
     bot.send_message(message.chat.id,
-                     "Добро пожаловать, {0.first_name}!  Я - <b>{1.first_name}</b>, бот созданный для того, чтобы вы смогли найти еду".format(
+                     "Добро пожаловать, {0.first_name}!  Я - <b>{1.first_name}</b>, бот созданный для того, чтобы вы смогли найти еду.".format(
                          message.from_user, bot.get_me()),
                      parse_mode='html', reply_markup=markup)
 # RUN
