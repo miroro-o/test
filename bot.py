@@ -1,29 +1,77 @@
-import config
-import telebot # pip install telebot
-from telebot import types # pip install pyTelegramBotAPI
-bot = telebot.TeleBot(config.token)
-@bot.message_handler(commands=['go', 'start'])  # Обработка команды для старта
-def welcome(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+import sqlite3
 
-    item3 = types.KeyboardButton("Приложения")
-    item2 = types.KeyboardButton("Мероприятия")
-    item1 = types.KeyboardButton('О нас')
+# Функция для инициализации базы данных
+def init_db():
+    connection = sqlite3.connect('users.db')
+    cursor = connection.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            status TEXT
+        )
+    ''')
+    connection.commit()
+    connection.close()
+def add_user(user_id, username, first_name, last_name, status):
+    connection = sqlite3.connect('users.db')
+    cursor = connection.cursor()
+    cursor.execute('''
+        INSERT OR REPLACE INTO users (user_id, username, first_name, last_name, status)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (user_id, username, first_name, last_name, status))
+    connection.commit()
+    connection.close()
 
-    markup.add(item1, item2, item3)
+def get_user(user_id):
+    connection = sqlite3.connect('users.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+    user = cursor.fetchone()
+    connection.close()
+    return user
 
+def update_user_status(user_id, status):
+    connection = sqlite3.connect('users.db')
+    cursor = connection.cursor()
+    cursor.execute('UPDATE users SET status = ? WHERE user_id = ?', (status, user_id))
+    connection.commit()
+    connection.close()
 
-    bot.send_message(message.chat.id,
-                     "Добро пожаловать, {0.first_name}!  Я - <b>{1.first_name}</b>, бот созданный для того, чтобы вы смогли найти еду.".format(
-                         message.from_user, bot.get_me()),
-                     parse_mode='html', reply_markup=markup)
-# RUN
-if __name__ == "__main__":
-    try:
-        bot.polling(none_stop=True)
-    except ConnectionError as e:
-        print('Ошибка соединения: ', e)
-    except Exception as r:
-        print("Непридвиденная ошибка: ", r)
-    finally:
-        print("Здесь всё закончилось")
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.from_user.id
+    username = update.message.from_user.username
+    first_name = update.message.from_user.first_name
+    last_name = update.message.from_user.last_name
+
+    # Добавление пользователя в базу данных
+    add_user(user_id, username, first_name, last_name, 'active')
+
+    # Создание кнопок и ответ
+    button1 = KeyboardButton("Регистрация")
+    button2 = KeyboardButton("Купить блюдо")
+    button3 = KeyboardButton("Помощь")
+    
+    keyboard = ReplyKeyboardMarkup([[button1, button2], [button3]], resize_keyboard=True)
+    await update.message.reply_text('Привет! Я твой помощник - povar_bot.', reply_markup=keyboard)
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Обработка текстовых сообщений
+    pass
+
+def main():
+    init_db()  # Инициализация базы данных
+    app = ApplicationBuilder().token('7645048229:AAFjquq_04glLT0rkUUwdbWjbAMQnV5GxzM').build()
+
+    app.add_handler(CommandHandler('start', start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    app.run_polling()
+
+if __name__ == '__main__':
+    main()
