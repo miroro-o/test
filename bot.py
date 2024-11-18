@@ -18,14 +18,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = ReplyKeyboardMarkup([[button3], [button2, button1]], resize_keyboard=True)
     await update.message.reply_text('Привет! Я твой помощник - povar_bot.', reply_markup=keyboard)
 
-async def send_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text('Нажмите /show_all_dishes для того, чтобы увидеть все блюда\nНажмите /choose_by_price для того, чтобы выбрать блюдо по ценовой категории\nНажмите /choose_by_cooker для того, чтобы выбрать блюдо по категории\n')
+
+async def show_all_dishes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dishes = get_data()
     if dishes:
-        update.message.reply_text("Список блюд:\n")
+        await update.message.reply_text("Список блюд:\n")
         message = ""
         for dish in dishes:
             id, name, description, price, category, username = dish
-            message += (f"ID: {id}\n"
+            message += (f"номер: {id}\n"
                         f"Название: {name}\n"
                         f"Описание: {description}\n"
                         f"Цена: {price}\n"
@@ -35,18 +38,38 @@ async def send_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             
         await update.message.reply_text(message)  # Выводим сообщение на консоль
     else:
-        print("В таблице нет блюд.")
-    # # Формируем сообщение
-    # for row in data:
-    #     message = ""
-    #     message += str(row) + "\n"  # Преобразуем строки в строку
-    # print(message)
-    # update.message.reply_text("1")
+        await update.message.reply_text("В таблице нет блюд.")
+    await update.message.reply_text('Внимание!\nКаждый день список обнуляется')
+
+async def choose_by_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text('Напишите макимальную цену')
+    # Сохраняем состояние, чтобы ожидать ввод названия блюда
+    context.user_data['awaiting_price'] = True
 
 async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Напишите название блюда, описание к нему, цену и категорию')
     # Сохраняем состояние, чтобы ожидать ввод названия блюда
     context.user_data['awaiting_dish_name'] = True
+
+async def choose_by_cooker(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    dishes = get_data()
+    if dishes:
+        message = "Выберите чьи блюда будем смотреть:\n\n"
+        usernames = []
+        for dish in dishes:
+            id, name, description, price, category, username = dish
+            usernames.append(username)
+        a = set(usernames)
+        for inut in a:
+             message += (f'Блюда {inut}\n')
+        await update.message.reply_text(message)
+        await update.message.reply_text("\nСкопируйте ник повара, чьи блюда хотите посмотреть и вставте в обратное сообщение")
+
+    else:
+        await update.message.reply_text("В таблице нет блюд.")
+
+    context.user_data['awaiting_user_name'] = True
+    
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Игнорируем сообщение пользователей, если у нас нет состояние ожидания
@@ -63,8 +86,52 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         # Удаляем состояние после обработки ввода
         context.user_data['awaiting_dish_name'] = False
+    elif 'awaiting_price' in context.user_data and context.user_data['awaiting_price']:
+        price_vvod = update.message.text  # Считываем цену 
+        if not price_vvod.isdigit():
+            await update.message.reply_text('Не могу обработать ваше сообщение :( ')
+        else:
+            price_vvod = int(price_vvod)
+            dishes = get_data()
+            if dishes:
+                 await update.message.reply_text("Список блюд:\n")
+                 message = ""
+                 for dish in dishes:
+                    id, name, description, price, category, username = dish
+                    if price_vvod >= price:
+                        message += (f"номер: {id}\n"
+                        f"Название: {name}\n"
+                        f"Описание: {description}\n"
+                        f"Цена: {price}\n"
+                        f"Категория: {category}\n"
+                        f"Никнейм повара: @{username}\n"
+                        f"------------------\n")
+            
+            await update.message.reply_text(message)
+        context.user_data['awaiting_price'] = False
+    elif 'awaiting_user_name' in context.user_data and context.user_data['awaiting_user_name']:
+        user_name = update.message.text
+        print(user_name)
+        dishes = get_data()
+        if dishes:
+                 await update.message.reply_text("Список блюд:\n")
+                 message = ""
+                 for dish in dishes:
+                    id, name, description, price, category, username = dish
+                    if user_name == username:
+                        message += (f"номер: {id}\n"
+                        f"Название: {name}\n"
+                        f"Описание: {description}\n"
+                        f"Цена: {price}\n"
+                        f"Категория: {category}\n"
+                        f"Никнейм повара: @{username}\n"
+                        f"------------------\n")
+            
+        await update.message.reply_text(message)
+        context.user_data['awaiting_user_name'] = False
     else:
-        await update.message.reply_text('Не могу обработать ваше сообщение. Нажмите /add для добавления блюда или /buy, чтобы купить блюдо.')
+        await update.message.reply_text("В таблице нет блюд.")
+
 
 
 def main():
@@ -76,7 +143,12 @@ def main():
     app.add_handler(CommandHandler('start', start))
     app.add_handler(CommandHandler('add', add))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_handler(CommandHandler('buy', send_data))
+    app.add_handler(CommandHandler('buy', buy))
+    app.add_handler(CommandHandler('show_all_dishes', show_all_dishes))
+    app.add_handler(CommandHandler('choose_by_price', choose_by_price))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CommandHandler('choose_by_cooker', choose_by_cooker))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.run_polling()
 
 if __name__ == '__main__':
