@@ -80,4 +80,3 @@ def get_data():
     rows = cursor.fetchall()
     conn.close()
     return rows
-

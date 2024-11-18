@@ -19,7 +19,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text('Привет! Я твой помощник - povar_bot.', reply_markup=keyboard)
 
 async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('Нажмите /show_all_dishes для того, чтобы увидеть все блюда\nНажмите /choose_by_price для того, чтобы выбрать блюдо по ценовой категории\nНажмите /choose_by_cooker для того, чтобы выбрать блюдо по категории\n')
+    await update.message.reply_text('Нажмите /show_all_dishes для того, чтобы увидеть все блюда\n'
+                                    'Нажмите /choose_by_price для того, чтобы выбрать блюдо по ценовой категории\n'
+                                    'Нажмите /choose_by_cooker для того, чтобы выбрать блюдо по категории\n')
 
 async def show_all_dishes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dishes = get_data()
@@ -63,7 +65,8 @@ async def choose_by_cooker(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for inut in a:
              message += (f'Блюда {inut}\n')
         await update.message.reply_text(message)
-        await update.message.reply_text("\nСкопируйте ник повара, чьи блюда хотите посмотреть и вставте в обратное сообщение")
+        await update.message.reply_text("\nСкопируйте ник повара, чьи блюда хотите посмотреть"
+                                        " и вставте в обратное сообщение")
 
     else:
         await update.message.reply_text("В таблице нет блюд.")
@@ -78,7 +81,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         username = update.message.from_user.username
         parts = dish_name.split('\n')
         if len(parts) != 4:
-            await update.message.reply_text('Не могу обработать ваше сообщение. Нажмите /add для добавления блюда или /buy, чтобы купить блюдо.')
+            await update.message.reply_text('Не могу обработать ваше сообщение. '
+                                            'Нажмите /add для добавления блюда'
+                                             ' или /buy, чтобы купить блюдо.')
         else:
             add_dish(parts[0], parts[1], parts[2], parts[3], username)
           # add_dish(name, description, cost, category, username)  # Добавляем блюдо в базу данных
@@ -111,7 +116,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data['awaiting_price'] = False
     elif 'awaiting_user_name' in context.user_data and context.user_data['awaiting_user_name']:
         user_name = update.message.text
-        print(user_name)
         dishes = get_data()
         if dishes:
                  await update.message.reply_text("Список блюд:\n")
