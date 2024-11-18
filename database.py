@@ -1,7 +1,7 @@
 import sqlite3
 
 def create_connection():
-    conn = sqlite3.connect('dishes.db')
+    conn = sqlite3.connect('dishes2.db')
     return conn
 
 def create_table():
@@ -13,22 +13,23 @@ def create_table():
             name TEXT NOT NULL,
             description TEXT,
             price REAL,
-            category TEXT
+            category TEXT,
+            username TEXT
         )
     ''')
     conn.commit()
     conn.close()
 
 
-def add_dish(dish_name, description=None, price=None, category=None):
+def add_dish(dish_name, description=None, price=None, category=None, username=None):
     # Добавляет новое блюдо в таблицу dishes
     conn = create_connection()
     cursor = conn.cursor()
     
     cursor.execute('''
-        INSERT INTO dishes (name, description, price, category)
-        VALUES (?, ?, ?, ?)
-    ''', (dish_name, description, price, category))
+        INSERT INTO dishes (name, description, price, category, username)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (dish_name, description, price, category, username))
     
     conn.commit()
     conn.close()

@@ -39,3 +39,12 @@ def update_user_status(user_id, status):
     cursor.execute('UPDATE users SET status = ? WHERE user_id = ?', (status, user_id))
     connection.commit()
     connection.close()
+
+def display_user(user_id):
+    user = get_user(user_id)
+    if user:
+        user_id, username, first_name, last_name, status = user
+        message = f"User ID: {user_id}\nUsername: {username}\nFirst Name: {first_name}\nLast Name: {last_name}\nStatus: {status}"
+        print(message)  # Выводим сообщение на консоль
+    else:
+        print("Пользователь не найден")

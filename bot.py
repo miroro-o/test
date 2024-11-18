@@ -1,4 +1,4 @@
-from base_users import init_db, get_user, add_user, update_user_status
+from base_users import init_db, get_user, add_user, update_user_status, display_user
 from config import token
 from database import create_table, add_dish, drop_tables, clear_database, get_data  # Импорт необходимых функций
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
@@ -19,16 +19,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text('Привет! Я твой помощник - povar_bot.', reply_markup=keyboard)
 
 async def send_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    data = get_data()
-    if not data:
-        update.message.reply_text("Нет данных в базе.")
-        return
-    
-    # Формируем сообщение
-    for row in data:
+    dishes = get_data()
+    if dishes:
+        update.message.reply_text("Список блюд:\n")
         message = ""
-        message += str(row) + "\n"  # Преобразуем строки в строку
-        update.message.reply_text(message)
+        for dish in dishes:
+            id, name, description, price, category, username = dish
+            message += (f"ID: {id}\n"
+                        f"Название: {name}\n"
+                        f"Описание: {description}\n"
+                        f"Цена: {price}\n"
+                        f"Категория: {category}\n"
+                        f"Никнейм повара: @{username}\n"
+                        f"------------------\n")
+            
+        await update.message.reply_text(message)  # Выводим сообщение на консоль
+    else:
+        print("В таблице нет блюд.")
+    # # Формируем сообщение
+    # for row in data:
+    #     message = ""
+    #     message += str(row) + "\n"  # Преобразуем строки в строку
+    # print(message)
+    # update.message.reply_text("1")
 
 async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Напишите название блюда, описание к нему, цену и категорию')
@@ -39,13 +52,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # Игнорируем сообщение пользователей, если у нас нет состояние ожидания
     if 'awaiting_dish_name' in context.user_data and context.user_data['awaiting_dish_name']:
         dish_name = update.message.text  # Считываем название блюда из сообщения
-        user_id = update.message.from_user.id
+        username = update.message.from_user.username
         parts = dish_name.split('\n')
         if len(parts) != 4:
             await update.message.reply_text('Не могу обработать ваше сообщение. Нажмите /add для добавления блюда или /buy, чтобы купить блюдо.')
         else:
-            add_dish(parts[0], parts[1], parts[2], parts[3])
-          # add_dish(name, description, cost, category)  # Добавляем блюдо в базу данных
+            add_dish(parts[0], parts[1], parts[2], parts[3], username)
+          # add_dish(name, description, cost, category, username)  # Добавляем блюдо в базу данных
             await update.message.reply_text(f'Вы добавили блюдо: \n{dish_name}')
 
         # Удаляем состояние после обработки ввода
@@ -56,6 +69,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 def main():
     init_db()  # Инициализация базы данных
+
+    # drop_tables()
     create_table()
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler('start', start))
