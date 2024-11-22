@@ -49,7 +49,10 @@ async def choose_by_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['awaiting_price'] = True
 
 async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Напишите название блюда, описание к нему, цену и категорию')
+    await update.message.reply_text('Напишите название блюда, \n'
+                                    'описание к нему, \n'
+                                     'цену,\n'
+                                     'категорию\n')
     # Сохраняем состояние, чтобы ожидать ввод названия блюда
     context.user_data['awaiting_dish_name'] = True
 
@@ -67,11 +70,12 @@ async def choose_by_cooker(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(message)
         await update.message.reply_text("\nСкопируйте ник повара, чьи блюда хотите посмотреть"
                                         " и вставте в обратное сообщение")
+        context.user_data['awaiting_user_name'] = True
 
     else:
         await update.message.reply_text("В таблице нет блюд.")
 
-    context.user_data['awaiting_user_name'] = True
+    
     
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -93,13 +97,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data['awaiting_dish_name'] = False
     elif 'awaiting_price' in context.user_data and context.user_data['awaiting_price']:
         price_vvod = update.message.text  # Считываем цену 
-        if not price_vvod.isdigit():
+        if not price_vvod.replace('.' , '' , 1).isdigit() :
             await update.message.reply_text('Не могу обработать ваше сообщение :( ')
         else:
-            price_vvod = int(price_vvod)
+            price_vvod = float(price_vvod)
             dishes = get_data()
             if dishes:
-                 await update.message.reply_text("Список блюд:\n")
                  message = ""
                  for dish in dishes:
                     id, name, description, price, category, username = dish
@@ -110,38 +113,51 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                         f"Цена: {price}\n"
                         f"Категория: {category}\n"
                         f"Никнейм повара: @{username}\n"
-                        f"------------------\n")
+                        f"------------------\n") 
+                 if message == "":
+                     await update.message.reply_text("В таблице нет блюд за такую цену")
+                 else:
+                     await update.message.reply_text("Список блюд:\n")
+                     await update.message.reply_text(message)
+            else:
+                await update.message.reply_text("В таблице нет блюд.")
             
-            await update.message.reply_text(message)
         context.user_data['awaiting_price'] = False
     elif 'awaiting_user_name' in context.user_data and context.user_data['awaiting_user_name']:
         user_name = update.message.text
         dishes = get_data()
         if dishes:
-                 await update.message.reply_text("Список блюд:\n")
-                 message = ""
-                 for dish in dishes:
-                    id, name, description, price, category, username = dish
-                    if user_name == username:
-                        message += (f"номер: {id}\n"
-                        f"Название: {name}\n"
-                        f"Описание: {description}\n"
-                        f"Цена: {price}\n"
-                        f"Категория: {category}\n"
-                        f"Никнейм повара: @{username}\n"
-                        f"------------------\n")
-            
-        await update.message.reply_text(message)
+            message = ""
+            for dish in dishes:
+                id, name, description, price, category, username = dish
+                if user_name == username:
+                    message += (f"номер: {id}\n"
+                                f"Название: {name}\n"
+                                f"Описание: {description}\n"
+                                f"Цена: {price}\n"
+                                f"Категория: {category}\n"
+                                f"Никнейм повара: @{username}\n"
+                                f"------------------\n")
+            if message == "":
+                await update.message.reply_text('Не могу обработать ваше сообщение :( ')
+            else:
+                await update.message.reply_text("Список блюд:\n")
+                await update.message.reply_text(message)
+        else:
+             await update.message.reply_text("В таблице нет блюд.")
+
         context.user_data['awaiting_user_name'] = False
     else:
-        await update.message.reply_text("В таблице нет блюд.")
+        await update.message.reply_text('Не могу обработать ваше сообщение :( ')
 
+        
 
 
 def main():
     init_db()  # Инициализация базы данных
 
     # drop_tables()
+    # clear_database()
     create_table()
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler('start', start))
