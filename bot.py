@@ -1,6 +1,6 @@
 from base_users import init_db, get_user, add_user, update_user_status, display_user
 from config import token
-from database import create_table, add_dish, drop_tables, clear_database, get_data  # Импорт необходимых функций
+from base_dishes import create_table, add_dish, drop_tables, clear_database, get_data 
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
@@ -21,7 +21,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text('Нажмите /show_all_dishes для того, чтобы увидеть все блюда\n'
                                     'Нажмите /choose_by_price для того, чтобы выбрать блюдо по ценовой категории\n'
-                                    'Нажмите /choose_by_cooker для того, чтобы выбрать блюдо по категории\n')
+                                    'Нажмите /choose_by_cooker для того, чтобы выбрать блюдо по повару\n')
 
 async def show_all_dishes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dishes = get_data()
@@ -74,9 +74,6 @@ async def choose_by_cooker(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     else:
         await update.message.reply_text("В таблице нет блюд.")
-
-    
-    
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Игнорируем сообщение пользователей, если у нас нет состояние ожидания
@@ -149,9 +146,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data['awaiting_user_name'] = False
     else:
         await update.message.reply_text('Не могу обработать ваше сообщение :( ')
-
-        
-
 
 def main():
     init_db()  # Инициализация базы данных

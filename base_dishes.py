@@ -1,7 +1,7 @@
 import sqlite3
 
 def create_connection():
-    conn = sqlite3.connect('dishes2.db')
+    conn = sqlite3.connect('dishes.db')
     return conn
 
 def create_table():
